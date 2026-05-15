@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import pharmaciesRouter from './routes/pharmacies';
 
 // Load environment variables
 dotenv.config();
@@ -27,6 +28,9 @@ app.get('/', (req: Request, res: Response) => {
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// 3. Pharmacies Route
+app.use('/api/pharmacies', pharmaciesRouter);
 
 // Start the server
 app.listen(port, () => {
