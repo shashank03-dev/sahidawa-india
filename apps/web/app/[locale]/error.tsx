@@ -6,10 +6,10 @@ import { Link } from "@/i18n/routing";
 
 interface ErrorProps {
   error: Error & { digest?: string };
-  reset: () => void;
+  unstable_retry: () => void;
 }
 
-export default function Error({ error, reset }: ErrorProps) {
+export default function Error({ error, unstable_retry }: ErrorProps) {
   useEffect(() => {
     console.error(error);
   }, [error]);
@@ -52,7 +52,7 @@ export default function Error({ error, reset }: ErrorProps) {
 
         <div className="w-full flex flex-col sm:flex-row gap-3">
           <button
-            onClick={reset}
+            onClick={() => unstable_retry()}
             className="flex-1 inline-flex items-center justify-center gap-2 bg-emerald-600 text-white rounded-full px-6 py-3 font-bold shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 transition-colors"
           >
             <RotateCw size={18} />

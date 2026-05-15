@@ -6,10 +6,10 @@ import "./[locale]/globals.css";
 
 interface GlobalErrorProps {
   error: Error & { digest?: string };
-  reset: () => void;
+  unstable_retry: () => void;
 }
 
-export default function GlobalError({ error, reset }: GlobalErrorProps) {
+export default function GlobalError({ error, unstable_retry }: GlobalErrorProps) {
   useEffect(() => {
     console.error(error);
   }, [error]);
@@ -54,7 +54,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 
             <div className="w-full flex flex-col sm:flex-row gap-3">
               <button
-                onClick={reset}
+                onClick={() => unstable_retry()}
                 className="flex-1 inline-flex items-center justify-center gap-2 bg-emerald-600 text-white rounded-full px-6 py-3 font-bold shadow-xl shadow-emerald-600/30 hover:bg-emerald-700 transition-colors"
               >
                 <RotateCw size={18} />
