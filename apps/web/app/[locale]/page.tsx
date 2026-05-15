@@ -16,12 +16,18 @@ import {
   Search,
   MessageCircle,
 } from "lucide-react";
+import { Link } from "@/i18n/routing";
 import { useRouter, useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import LanguageSwitcher from "./LanguageSwitcher";
+import Footer from "./components/Footer";
 
 export default function SahiDawaHome() {
   const router = useRouter();
   const params = useParams();
   const locale = params.locale;
+  const t = useTranslations("Home");
+  const nav = useTranslations("Navigation");
 
   const handleNavigation = (path: string) => {
     router.push(`/${locale}/${path}`);
@@ -44,16 +50,18 @@ export default function SahiDawaHome() {
           <div className="flex items-center gap-4">
             <nav className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-600">
               <button className="hover:text-emerald-600 transition-colors">
-                How it Works
+                {nav("how_it_works")}
               </button>
               <button className="hover:text-emerald-600 transition-colors">
-                Alerts
+                {nav("alerts")}
               </button>
               <button className="hover:text-emerald-600 transition-colors">
-                Pharmacy Map
+                {nav("pharmacy_map")}
               </button>
             </nav>
-            
+
+            <LanguageSwitcher />
+
             {/* AI Health Assistant Button */}
             <button
               onClick={() => handleNavigation('health')}
@@ -62,12 +70,6 @@ export default function SahiDawaHome() {
               <MessageCircle size={16} />
               <span className="hidden sm:inline">AI Health Assistant</span>
               <span className="sm:hidden">AI Chat</span>
-            </button>
-            
-            <button className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 bg-slate-100 border border-slate-200 text-slate-700 rounded-full hover:bg-slate-200 transition-colors shadow-sm">
-              <Globe size={16} className="text-emerald-600" />
-              <span className="hidden sm:inline">English</span>
-              <span className="sm:hidden">EN</span>
             </button>
           </div>
         </div>
@@ -89,15 +91,13 @@ export default function SahiDawaHome() {
                 GSSoC 2026 Initiative
               </div>
               <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.1]">
-                Your Health, <br />
+                {t("title").split(",")[0]}, <br />
                 <span className="text-transparent bg-clip-text bg-linear-to-r from-emerald-600 to-teal-500">
-                  Verified & Protected.
+                  {t("title").split(",")[1]}
                 </span>
               </h2>
               <p className="text-lg md:text-xl text-slate-500 font-medium leading-relaxed max-w-xl">
-                India's open-source citizen platform to instantly verify
-                medicine authenticity, find safe pharmacies, and receive
-                critical health alerts.
+                {t("subtitle")}
               </p>
             </div>
 
@@ -114,10 +114,10 @@ export default function SahiDawaHome() {
                 </div>
                 <div>
                   <span className="block text-2xl md:text-3xl font-bold tracking-wide drop-shadow-sm">
-                    Scan Medicine
+                    {t("scan_button")}
                   </span>
                   <span className="block text-emerald-100 text-sm md:text-base font-medium opacity-90 mt-1">
-                    Point camera at packaging or barcode
+                    {t("scan_subtitle")}
                   </span>
                 </div>
               </div>
@@ -135,10 +135,10 @@ export default function SahiDawaHome() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-800 text-lg">
-                    Upload Photo
+                    {t("upload_photo")}
                   </h3>
                   <p className="text-slate-500 text-sm mt-0.5 font-medium leading-snug">
-                    Select from gallery
+                    {t("upload_subtitle")}
                   </p>
                 </div>
               </button>
@@ -152,10 +152,10 @@ export default function SahiDawaHome() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-800 text-lg">
-                    Voice Triage
+                    {t("voice_triage")}
                   </h3>
                   <p className="text-slate-500 text-sm mt-0.5 font-medium leading-snug">
-                    Speak symptoms
+                    {t("voice_subtitle")}
                   </p>
                 </div>
               </button>
@@ -169,10 +169,10 @@ export default function SahiDawaHome() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-800 text-lg">
-                    Pharmacy Map
+                    {t("pharmacy_map")}
                   </h3>
                   <p className="text-slate-500 text-sm mt-0.5 font-medium leading-snug">
-                    Find verified stores
+                    {t("pharmacy_subtitle")}
                   </p>
                 </div>
               </button>
@@ -213,11 +213,11 @@ export default function SahiDawaHome() {
               </div>
               <input
                 type="text"
-                placeholder="Search medicine or batch..."
+                placeholder={t("search_placeholder")}
                 className="w-full bg-transparent border-none outline-none px-4 py-3 text-slate-700 font-medium placeholder:text-slate-400"
               />
               <button className="bg-slate-900 text-white px-5 sm:px-6 py-3 rounded-2xl font-bold hover:bg-slate-800 transition-colors text-sm sm:text-base">
-                Search
+                {t("search_button")}
               </button>
             </div>
 
@@ -243,12 +243,8 @@ export default function SahiDawaHome() {
                   </div>
                   <div className="flex-1">
                     <div className="flex justify-between items-start">
-                      <h4 className="font-bold text-slate-800 leading-tight">
-                        Augmentin 625 Duo
-                      </h4>
-                      <span className="text-[11px] font-medium text-slate-400">
-                        2h ago
-                      </span>
+                      <h4 className="font-bold text-slate-800 leading-tight">Augmentin 625 Duo</h4>
+                      <span className="text-[11px] font-medium text-slate-400">2h ago</span>
                     </div>
                     <p className="text-sm text-slate-500 mt-1 font-medium leading-snug">
                       Batch No. <span className="font-bold text-slate-700">B23059</span> reported suspicious by 12 users.
@@ -263,12 +259,8 @@ export default function SahiDawaHome() {
                   </div>
                   <div className="flex-1">
                     <div className="flex justify-between items-start">
-                      <h4 className="font-bold text-slate-800 leading-tight">
-                        Pan 40
-                      </h4>
-                      <span className="text-[11px] font-medium text-slate-400">
-                        5h ago
-                      </span>
+                      <h4 className="font-bold text-slate-800 leading-tight">Pan 40</h4>
+                      <span className="text-[11px] font-medium text-slate-400">5h ago</span>
                     </div>
                     <p className="text-sm text-slate-500 mt-1 font-medium leading-snug">
                       Substandard quality detected in UP region. Batch <span className="font-bold text-slate-700">UP992</span>.
@@ -283,12 +275,8 @@ export default function SahiDawaHome() {
                   </div>
                   <div className="flex-1">
                     <div className="flex justify-between items-start">
-                      <h4 className="font-bold text-slate-800 leading-tight">
-                        System Update
-                      </h4>
-                      <span className="text-[11px] font-medium text-slate-400">
-                        1d ago
-                      </span>
+                      <h4 className="font-bold text-slate-800 leading-tight">System Update</h4>
+                      <span className="text-[11px] font-medium text-slate-400">1d ago</span>
                     </div>
                     <p className="text-sm text-slate-500 mt-1 font-medium leading-snug">
                       New pharmacy data synced from Ministry of Health.
@@ -306,25 +294,22 @@ export default function SahiDawaHome() {
         </div>
       </main>
 
-      {/* Footer Constraint for Mobile Nav Space */}
       <div className="h-16 md:hidden"></div>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200/60 flex justify-around px-2 py-3 items-center z-50 pb-safe">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200/60 flex justify-around px-2 py-3 items-center z-50 pb-[env(safe-area-inset-bottom)]">
         <button className="flex flex-col items-center gap-1.5 w-16 group">
           <div className="text-emerald-600 group-hover:-translate-y-1 transition-transform">
             <Home size={24} strokeWidth={2.5} />
           </div>
           <span className="text-[11px] font-bold text-emerald-600">Home</span>
         </button>
-
         <button className="flex flex-col items-center gap-1.5 w-16 group text-slate-400 hover:text-slate-600 transition-colors">
           <div className="group-hover:-translate-y-1 transition-transform">
             <History size={24} strokeWidth={2} />
           </div>
           <span className="text-[11px] font-semibold">Scans</span>
         </button>
-
         <button className="flex flex-col items-center gap-1.5 w-16 group text-slate-400 hover:text-slate-600 transition-colors">
           <div className="relative group-hover:-translate-y-1 transition-transform">
             <Bell size={24} strokeWidth={2} />
@@ -332,7 +317,6 @@ export default function SahiDawaHome() {
           </div>
           <span className="text-[11px] font-semibold">Alerts</span>
         </button>
-
         <button className="flex flex-col items-center gap-1.5 w-16 group text-slate-400 hover:text-slate-600 transition-colors">
           <div className="group-hover:-translate-y-1 transition-transform">
             <User size={24} strokeWidth={2} />
@@ -340,6 +324,7 @@ export default function SahiDawaHome() {
           <span className="text-[11px] font-semibold">Profile</span>
         </button>
       </nav>
+      <Footer />
     </div>
   );
 }
