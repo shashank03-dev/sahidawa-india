@@ -329,7 +329,7 @@ export default function PharmacyMapPage() {
     setFetchError(null);
     setShowSearchArea(false);
     try {
-      const results = await fetchPharmaciesInBounds(bounds);
+      const results = await fetchPharmaciesInBounds(bounds.south, bounds.west, bounds.north, bounds.east);
       const mapped = results.map(toPharmacy);
       setPharmacies(mapped);
       setPharmacyCount(mapped.length);
