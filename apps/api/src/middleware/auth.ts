@@ -65,6 +65,33 @@ export const createAuthMiddleware =
 
 export const requireAuth = createAuthMiddleware();
 
+export const createOptionalAuthMiddleware =
+  (client: SupabaseAuthClient = supabase) =>
+  async (req: AuthenticatedRequest, _res: Response, next: NextFunction) => {
+    const token = getBearerToken(req.headers.authorization);
+
+    if (!token) {
+      return next();
+    }
+
+    const { data, error } = await client.auth.getUser(token);
+
+    if (error || !data.user) {
+      return next();
+    }
+
+    req.user = {
+      id: data.user.id,
+      email: data.user.email,
+      role: getUserRole(data.user),
+      raw: data.user,
+    };
+
+    next();
+  };
+
+export const optionalAuth = createOptionalAuthMiddleware();
+
 export const requireRole =
   (...allowedRoles: AuthRole[]) =>
   (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
