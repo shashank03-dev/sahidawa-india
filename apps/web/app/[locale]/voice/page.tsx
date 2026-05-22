@@ -109,6 +109,7 @@ export default function VoiceTriagePage() {
     const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
     const [animationsEnabled, setAnimationsEnabled] = useState(true);
     const [isVisualizerFading, setIsVisualizerFading] = useState(false);
+    const [srAnnouncement, setSrAnnouncement] = useState("");
 
     const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
     const audioStreamRef = useRef<MediaStream | null>(null);
@@ -119,6 +120,7 @@ export default function VoiceTriagePage() {
     const manualStopRef = useRef(false);
     const startSessionIdRef = useRef(0);
     const autoSpokenKeyRef = useRef("");
+    const panelRef = useRef<HTMLDivElement | null>(null);
 
     const selectedLanguageOption = getVoiceLanguageOption(selectedLanguage);
     const resultLanguageOption = getVoiceLanguageOption(resultLanguageCode ?? selectedLanguage);
@@ -210,6 +212,49 @@ export default function VoiceTriagePage() {
         autoSpokenKeyRef.current = autoSpokenKey;
         handleReplaySummary();
     }, [result, resultLanguageOption.speechSynthesisLang, step]);
+
+    useEffect(() => {
+        if (step === "initial") {
+            setSrAnnouncement("");
+            return;
+        }
+
+        let announcement = "";
+
+        switch (step) {
+            case "listening":
+                announcement = t("listening_status");
+                break;
+            case "processing":
+                announcement = t("processing_subtitle");
+                break;
+            case "review":
+                announcement = `${t("review_title")}. ${t("review_message")}`;
+                break;
+            case "result":
+                if (result) {
+                    announcement = result.emergency
+                        ? `${t("result_heading")} - ${t("emergency_title")}. ${t("result_subheading")}`
+                        : `${t("result_heading")}. ${t("result_subheading")}`;
+                }
+                break;
+            case "error":
+                announcement = error
+                    ? `${t("errors.generic_title")} - ${error.title}. ${error.message}`
+                    : t("errors.generic_title");
+                break;
+        }
+
+        if (announcement) {
+            setSrAnnouncement(announcement);
+        }
+
+        const focusTimer = window.setTimeout(() => {
+            panelRef.current?.focus();
+        }, 100);
+
+        return () => window.clearTimeout(focusTimer);
+    }, [error, result, step, t]);
 
     function resetFlow(nextStep: VoiceStep = "initial") {
         startSessionIdRef.current += 1;
@@ -610,6 +655,10 @@ export default function VoiceTriagePage() {
 
     return (
         <div className="relative flex min-h-screen flex-col overflow-hidden bg-slate-50 font-sans">
+            <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+                {srAnnouncement}
+            </div>
+
             <div
                 className="absolute top-0 right-0 -mt-20 -mr-20 h-96 w-96 rounded-full bg-emerald-100/40 blur-3xl"
                 aria-hidden="true"
@@ -674,92 +723,98 @@ export default function VoiceTriagePage() {
                     />
                 </div>
 
-                {step === "initial" && (
-                    <VoiceIntroPanel
-                        title={t("title")}
-                        subtitle={t("subtitle")}
-                        exampleLabel={t("example_label")}
-                        exampleText={t("example_text")}
-                        assistantLabel={t("assistant_label")}
-                        assistantValue={t("assistant_value")}
-                    />
-                )}
+                <div
+                    ref={panelRef}
+                    tabIndex={-1}
+                    className="w-full max-w-md rounded-[2.5rem] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:ring-offset-2"
+                >
+                    {step === "initial" && (
+                        <VoiceIntroPanel
+                            title={t("title")}
+                            subtitle={t("subtitle")}
+                            exampleLabel={t("example_label")}
+                            exampleText={t("example_text")}
+                            assistantLabel={t("assistant_label")}
+                            assistantValue={t("assistant_value")}
+                        />
+                    )}
 
-                {step === "listening" && (
-                    <VoiceListeningPanel
-                        transcript={transcript || t("listening_placeholder")}
-                        statusLabel={t("listening_status")}
-                        stream={audioStream}
-                        isListening={isListening}
-                        isFading={isVisualizerFading}
-                        animationsEnabled={animationsEnabled}
-                        visualizerLabel={t("visualizer_label")}
-                        volumeLabel={t("volume_label")}
-                        liveVolumeLabel={t("volume_live_label")}
-                        stillVolumeLabel={t("volume_still_label")}
-                        visualizerUnavailableLabel={t("visualizer_unavailable")}
-                    />
-                )}
+                    {step === "listening" && (
+                        <VoiceListeningPanel
+                            transcript={transcript || t("listening_placeholder")}
+                            statusLabel={t("listening_status")}
+                            stream={audioStream}
+                            isListening={isListening}
+                            isFading={isVisualizerFading}
+                            animationsEnabled={animationsEnabled}
+                            visualizerLabel={t("visualizer_label")}
+                            volumeLabel={t("volume_label")}
+                            liveVolumeLabel={t("volume_live_label")}
+                            stillVolumeLabel={t("volume_still_label")}
+                            visualizerUnavailableLabel={t("visualizer_unavailable")}
+                        />
+                    )}
 
-                {step === "processing" && (
-                    <VoiceProcessingPanel
-                        title={t("processing_title")}
-                        subtitle={t("processing_subtitle")}
-                    />
-                )}
+                    {step === "processing" && (
+                        <VoiceProcessingPanel
+                            title={t("processing_title")}
+                            subtitle={t("processing_subtitle")}
+                        />
+                    )}
 
-                {step === "review" && (
-                    <VoiceReviewPanel
-                        title={t("review_title")}
-                        message={t("review_message")}
-                        transcript={transcript}
-                        confidence={confidence}
-                        confidenceLabelPrefix={t("confidence_label")}
-                        confidenceValueLabel={getConfidenceValueLabel(confidence, t)}
-                        retryLabel={t("retry_button")}
-                        analyseLabel={t("analyse_anyway_button")}
-                        onRetry={() => resetFlow()}
-                        onAnalyse={() =>
-                            void analyseTranscript(transcript, confidence, emergencyMatches)
-                        }
-                        emergencyTitle={t("emergency_title")}
-                        emergencyBody={t("emergency_body")}
-                        showEmergency={emergencyMatches.length > 0}
-                    />
-                )}
+                    {step === "review" && (
+                        <VoiceReviewPanel
+                            title={t("review_title")}
+                            message={t("review_message")}
+                            transcript={transcript}
+                            confidence={confidence}
+                            confidenceLabelPrefix={t("confidence_label")}
+                            confidenceValueLabel={getConfidenceValueLabel(confidence, t)}
+                            retryLabel={t("retry_button")}
+                            analyseLabel={t("analyse_anyway_button")}
+                            onRetry={() => resetFlow()}
+                            onAnalyse={() =>
+                                void analyseTranscript(transcript, confidence, emergencyMatches)
+                            }
+                            emergencyTitle={t("emergency_title")}
+                            emergencyBody={t("emergency_body")}
+                            showEmergency={emergencyMatches.length > 0}
+                        />
+                    )}
 
-                {step === "error" && error && (
-                    <VoiceErrorPanel
-                        error={error}
-                        retryLabel={t("retry_button")}
-                        onRetry={() => resetFlow()}
-                    />
-                )}
+                    {step === "error" && error && (
+                        <VoiceErrorPanel
+                            error={error}
+                            retryLabel={t("retry_button")}
+                            onRetry={() => resetFlow()}
+                        />
+                    )}
 
-                {step === "result" && result && (
-                    <VoiceResultPanel
-                        heading={t("result_heading")}
-                        subheading={t("result_subheading")}
-                        transcriptLabel={t("transcript_label")}
-                        transcript={transcript}
-                        confidence={confidence}
-                        confidenceLabelPrefix={t("confidence_label")}
-                        confidenceValueLabel={getConfidenceValueLabel(confidence, t)}
-                        result={result}
-                        emergencyTitle={t("emergency_title")}
-                        emergencyBody={t("emergency_body")}
-                        recommendationsLabel={t("recommendations_label")}
-                        shareLabel={t("share_button")}
-                        speakLabel={t("speak_button")}
-                        stopSpeakingLabel={t("stop_speaking_button")}
-                        tryAgainLabel={t("try_again_button")}
-                        isSpeaking={isSpeaking}
-                        onReplay={handleReplaySummary}
-                        onStopSpeaking={handleStopSpeaking}
-                        onShare={handleShare}
-                        onTryAgain={() => resetFlow()}
-                    />
-                )}
+                    {step === "result" && result && (
+                        <VoiceResultPanel
+                            heading={t("result_heading")}
+                            subheading={t("result_subheading")}
+                            transcriptLabel={t("transcript_label")}
+                            transcript={transcript}
+                            confidence={confidence}
+                            confidenceLabelPrefix={t("confidence_label")}
+                            confidenceValueLabel={getConfidenceValueLabel(confidence, t)}
+                            result={result}
+                            emergencyTitle={t("emergency_title")}
+                            emergencyBody={t("emergency_body")}
+                            recommendationsLabel={t("recommendations_label")}
+                            shareLabel={t("share_button")}
+                            speakLabel={t("speak_button")}
+                            stopSpeakingLabel={t("stop_speaking_button")}
+                            tryAgainLabel={t("try_again_button")}
+                            isSpeaking={isSpeaking}
+                            onReplay={handleReplaySummary}
+                            onStopSpeaking={handleStopSpeaking}
+                            onShare={handleShare}
+                            onTryAgain={() => resetFlow()}
+                        />
+                    )}
+                </div>
             </main>
 
             {showMicFooter && (
@@ -771,7 +826,11 @@ export default function VoiceTriagePage() {
                                 ? t("stop_listening_aria")
                                 : t("start_listening_aria")
                         }
-                        className={`relative flex h-24 w-24 items-center justify-center rounded-full transition-all duration-500 ${step === "listening" ? "scale-125 bg-red-500" : "bg-emerald-500 shadow-xl shadow-emerald-500/30 hover:scale-110"} `}
+                        className={`relative flex h-24 w-24 items-center justify-center rounded-full transition-all duration-500 focus-visible:ring-4 focus-visible:ring-offset-4 focus-visible:outline-none ${
+                            step === "listening"
+                                ? "scale-125 bg-red-500 focus-visible:ring-red-500/50"
+                                : "bg-emerald-500 shadow-xl shadow-emerald-500/30 hover:scale-110 focus-visible:ring-emerald-500/50"
+                        } `}
                     >
                         {step === "listening" ? (
                             <div
