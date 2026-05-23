@@ -76,8 +76,12 @@ describe("voice language config", () => {
     });
 
     it("keeps the active workflow language stable after capture starts", () => {
-        expect(resolveVoiceWorkflowLanguage("bn-IN", "te-IN")).toBe("bn-IN");
-        expect(resolveVoiceWorkflowLanguage(null, "te-IN")).toBe("te-IN");
+        expect(resolveVoiceWorkflowLanguage(null, "bn-IN", "te-IN")).toBe("bn-IN");
+        expect(resolveVoiceWorkflowLanguage(null, null, "te-IN")).toBe("te-IN");
+    });
+
+    it("prefers the session snapshot over stale state on retry", () => {
+        expect(resolveVoiceWorkflowLanguage("te-IN", "bn-IN", "te-IN")).toBe("te-IN");
     });
 });
 

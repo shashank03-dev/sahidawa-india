@@ -60,8 +60,13 @@ export function getVoiceLanguageOption(value: string): VoiceLanguageOption {
 }
 
 export function resolveVoiceWorkflowLanguage(
+    sessionLanguage: string | null | undefined,
     activeLanguage: string | null | undefined,
     selectedLanguage: string
 ) {
+    if (sessionLanguage?.trim()) {
+        return sessionLanguage;
+    }
+
     return activeLanguage?.trim() ? activeLanguage : selectedLanguage;
 }
