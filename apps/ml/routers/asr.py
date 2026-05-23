@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 import noisereduce as nr
 import numpy as np
@@ -20,18 +21,49 @@ from services.telemetry import (
 logger = logging.getLogger(__name__)
 telemetry_logger = get_telemetry_logger()
 
-router = APIRouter(prefix="/asr", tags=["ASR"])
-
 # Load model lazily on first request — prevents blocking startup of FastAPI microservice
 model = None
+WHISPER_MODEL_SIZE = os.getenv("WHISPER_MODEL_SIZE", "small")
+WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")
+WHISPER_COMPUTE_TYPE = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
+WHISPER_BEAM_SIZE = int(os.getenv("WHISPER_BEAM_SIZE", "5"))
+WHISPER_PRELOAD_ON_STARTUP = os.getenv("WHISPER_PRELOAD_ON_STARTUP", "").strip().lower()
+
+
+def should_preload_model_on_startup() -> bool:
+    return WHISPER_PRELOAD_ON_STARTUP in {"1", "true", "yes", "on"}
 
 def get_model():
     global model
     if model is None:
-        logger.info("Loading Whisper model lazily...")
-        model = WhisperModel("medium", device="cpu", compute_type="int8")
+        logger.info(
+            "Loading Whisper model lazily with size=%s device=%s compute_type=%s",
+            WHISPER_MODEL_SIZE,
+            WHISPER_DEVICE,
+            WHISPER_COMPUTE_TYPE,
+        )
+        model = WhisperModel(
+            WHISPER_MODEL_SIZE,
+            device=WHISPER_DEVICE,
+            compute_type=WHISPER_COMPUTE_TYPE,
+        )
         logger.info("Whisper model loaded ✅")
     return model
+
+
+def preload_model_if_configured() -> None:
+    if should_preload_model_on_startup():
+        logger.info("Preloading Whisper model during startup...")
+        get_model()
+
+
+@asynccontextmanager
+async def asr_router_lifespan(_app):
+    preload_model_if_configured()
+    yield
+
+
+router = APIRouter(prefix="/asr", tags=["ASR"], lifespan=asr_router_lifespan)
 
 ALLOWED_TYPES = {
     "audio/wav",
@@ -44,19 +76,23 @@ ALLOWED_TYPES = {
 }
 
 
-def normalize_language_hint(language: str | None):
-    if not language:
+def normalize_requested_language(language: str | None) -> str | None:
+    if language is None:
         return None
 
     normalized = language.strip().lower()
     if not normalized:
         return None
 
-    return normalized.split("-")[0]
+    primary_code = normalized.split("-")[0]
+    if 2 <= len(primary_code) <= 3 and primary_code.isalpha():
+        return primary_code
+
+    return None
 
 
 @router.post("/transcribe")
-async def transcribe_audio(file: UploadFile = File(...), language: str | None = Form(None)):
+async def transcribe_audio(file: UploadFile = File(...), language: str | None = Form(default=None)):
     """
     Accepts any supported audio file upload and returns transcribed text.
 
@@ -76,6 +112,7 @@ async def transcribe_audio(file: UploadFile = File(...), language: str | None = 
                    f"Accepted: {', '.join(sorted(ALLOWED_TYPES))}"
         )
 
+    requested_language = normalize_requested_language(language)
     tmp_path: str | None = None
     normalized_path: str | None = None
     transcription_started_at: float | None = None
@@ -137,14 +174,15 @@ async def transcribe_audio(file: UploadFile = File(...), language: str | None = 
 
         # ── 6. Transcribe with faster-whisper ─────────────────────────────────
         # language=None → auto-detect; task="transcribe" preserves native language
-        # (no translation). beam_size=8 improves accuracy for regional languages.
+        # (no translation). Beam size stays configurable so deployments can tune
+        # accuracy vs latency without code changes.
         transcription_started_at = start_timer()
         memory_before_mb = get_memory_usage_mb()
         segments, info = get_model().transcribe(
             reduced_audio,
-            language=normalize_language_hint(language),
+            language=requested_language,
             task="transcribe",
-            beam_size=8,
+            beam_size=WHISPER_BEAM_SIZE,
             vad_filter=True,
             vad_parameters=dict(
                 min_silence_duration_ms=300,
@@ -162,7 +200,8 @@ async def transcribe_audio(file: UploadFile = File(...), language: str | None = 
         )
 
         logger.info(
-            f"Transcription complete | lang={info.language} "
+            f"Transcription complete | requested_lang={requested_language} "
+            f"lang={info.language} "
             f"prob={info.language_probability:.2f} | chars={len(transcript)}"
         )
 

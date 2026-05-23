@@ -1,7 +1,8 @@
 # API Endpoint Reference
 
-This document provides a comprehensive reference for all API endpoints in the **SahiDawa** system.
+This document provides a comprehensive reference for the HTTP endpoints that power **SahiDawa**.
 
+<<<<<<< HEAD
 The platform runs three service surfaces:
 
 | Service    | Technology                 | Port   | Base URL                |
@@ -10,9 +11,22 @@ The platform runs three service surfaces:
 | `apps/api` | Express (Node.js)          | `4000` | `http://localhost:4000` |
 | `apps/ml`  | FastAPI (Python)           | `8000` | `http://localhost:8000` |
 
+=======
+The platform runs three HTTP services during local development:
+
+| Service    | Technology         | Port   | Base URL                |
+| ---------- | ------------------ | ------ | ----------------------- |
+| `apps/web` | Next.js App Router | `3000` | `http://localhost:3000` |
+| `apps/api` | Express (Node.js)  | `4000` | `http://localhost:4000` |
+| `apps/ml`  | FastAPI (Python)   | `8000` | `http://localhost:8000` |
+
+> > > > > > > 35ad308 (feat(voice): make voice triage production-ready end-to-end)
+
 ---
 
 # Table of Contents
+
+<<<<<<< HEAD
 
 - [apps/web — Next.js Web App Routes](#appsweb--nextjs-web-app-routes-port-3000)
     - [POST /api/voice/transcribe](#post-apivoicetranscribe)
@@ -56,10 +70,63 @@ at `/asr/transcribe`.
 | `file`     | `file`   | Yes      | Recorded audio clip to transcribe              |
 | `language` | `string` | No       | Selected browser speech locale such as `ta-IN` |
 
+=======
+
+- [apps/web — Next.js Route Handlers](#appsweb--nextjs-route-handlers-port-3000)
+    - [POST /api/voice/transcribe](#post-apivoicetranscribe)
+- [apps/api — Express Service](#appsapi--express-service-port-4000)
+    - [GET /](#get-)
+    - [GET /health](#get-health)
+    - [POST /api/verify](#post-apiverify)
+    - [Recall Push Notifications](#recall-push-notifications)
+- [apps/ml — FastAPI ML Service](#appsml--fastapi-ml-service-port-8000)
+    - [GET /](#get--1)
+    - [GET /health](#get-health-1)
+    - [POST /ocr/extract](#post-ocrextract)
+    - [POST /asr/transcribe](#post-asrtranscribe)
+- [Error Codes Summary](#error-codes-summary)
+- [Notes for Contributors](#notes-for-contributors)
+
+---
+
+# apps/web — Next.js Route Handlers (Port 3000)
+
+## POST /api/voice/transcribe
+
+Proxy endpoint used by the Voice Triage page. It accepts recorded browser audio,
+forwards the multipart payload to the ML ASR service, and normalizes the result
+for the UI.
+
+| Field         | Details                         |
+| ------------- | ------------------------------- |
+| Method        | `POST`                          |
+| Path          | `/api/voice/transcribe`         |
+| Auth Required | No                              |
+| Content-Type  | `multipart/form-data`           |
+| Upstream      | `ML_SERVICE_URL/asr/transcribe` |
+
+### Request Body
+
+| Field      | Type     | Required | Description                                               |
+| ---------- | -------- | -------- | --------------------------------------------------------- |
+| `file`     | `file`   | Yes      | Recorded audio blob from the Voice Triage page            |
+| `language` | `string` | No       | Optional BCP-47 hint such as `en-IN`, `ta-IN`, or `bn-IN` |
+
+### Example Request (cURL)
+
+```bash
+curl -X POST http://localhost:3000/api/voice/transcribe \
+  -F "file=@voice-query.wav;type=audio/wav" \
+  -F "language=en-IN"
+```
+
+> > > > > > > 35ad308 (feat(voice): make voice triage production-ready end-to-end)
+
 ### Example Response — `200 OK`
 
 ```json
 {
+<<<<<<< HEAD
     "transcript": "I have fever and cough",
     "language": "en",
     "languageConfidence": 0.84
@@ -87,6 +154,19 @@ at `/asr/transcribe`.
 ```json
 {
     "error": "Could not reach the transcription service."
+=======
+    "transcript": "I have had fever and cough for two days",
+    "language": "en",
+    "languageConfidence": 0.98
+}
+```
+
+### Example Response — `504 Gateway Timeout`
+
+```json
+{
+    "error": "Transcription service timed out."
+>>>>>>> 35ad308 (feat(voice): make voice triage production-ready end-to-end)
 }
 ```
 
@@ -336,6 +416,10 @@ curl -X POST http://localhost:8000/ocr/extract \
 
 ML service endpoint used by the web proxy above. This route accepts uploaded audio, normalizes it to a Whisper-friendly format, and returns the raw transcription payload.
 
+Speech-to-text endpoint used by Voice Triage. It accepts recorded browser audio,
+normalizes it to 16kHz mono WAV with FFmpeg, runs Faster-Whisper, and returns
+the transcript plus detected language metadata.
+
 | Field         | Details               |
 | ------------- | --------------------- |
 | Method        | `POST`                |
@@ -343,26 +427,65 @@ ML service endpoint used by the web proxy above. This route accepts uploaded aud
 | Auth Required | No                    |
 | Content-Type  | `multipart/form-data` |
 
+### Request Body
+
+| Field      | Type     | Required | Description                                                                                                 |
+| ---------- | -------- | -------- | ----------------------------------------------------------------------------------------------------------- |
+| `file`     | `file`   | Yes      | Audio file (`WAV`, `MP3`, `OGG`, `WEBM`, `MP4`, `FLAC`)                                                     |
+| `language` | `string` | No       | Optional language hint. BCP-47 values such as `ta-IN` are normalized to `ta` before being passed to Whisper |
+
+### Example Request (cURL)
+
+```bash
+curl -X POST http://localhost:8000/asr/transcribe \
+  -F "file=@query.webm;type=audio/webm" \
+  -F "language=hi-IN"
+```
+
+### Example Response — `200 OK`
+
+```json
+{
+    "transcription": "इस दवाई का बैच नंबर क्या है",
+    "language": "hi",
+    "language_probability": 0.97,
+    "filename": "query.webm"
+}
+```
+
+### Example Response — `422 Unprocessable Entity`
+
+```json
+{
+    "detail": "Could not process audio file. Ensure it is a valid, non-corrupted audio recording."
+}
+```
+
 ---
 
 # Error Codes Summary
 
-| HTTP Status | Meaning                                                        |
-| ----------- | -------------------------------------------------------------- |
-| `200`       | Success                                                        |
-| `400`       | Bad Request — malformed request syntax                         |
-| `404`       | Not Found — endpoint does not exist                            |
-| `422`       | Unprocessable Entity — validation failed                       |
-| `429`       | Too Many Requests — rate limit exceeded                        |
-| `502`       | Bad Gateway — upstream service returned an invalid payload     |
-| `503`       | Service Unavailable — upstream dependency could not be reached |
-| `500`       | Internal Server Error — something went wrong on the server     |
+| HTTP Status | Meaning                                                     |
+| ----------- | ----------------------------------------------------------- |
+| `200`       | Success                                                     |
+| `400`       | Bad Request — malformed request syntax                      |
+| `404`       | Not Found — endpoint does not exist                         |
+| `422`       | Unprocessable Entity — validation failed                    |
+| `429`       | Too Many Requests — rate limit exceeded                     |
+| `502`       | Bad Gateway — upstream service returned invalid data        |
+| `503`       | Service Unavailable — upstream service could not be reached |
+| `504`       | Gateway Timeout — upstream ASR timed out                    |
+| `500`       | Internal Server Error — something went wrong on the server  |
 
 ---
 
 # Notes for Contributors
 
+- The web Voice Triage flow records audio in the browser, posts it to `/api/voice/transcribe`, and only falls back to browser speech recognition when recording support is unavailable.
+- The FastAPI ASR service is configurable through `WHISPER_MODEL_SIZE`, `WHISPER_DEVICE`, `WHISPER_COMPUTE_TYPE`, `WHISPER_BEAM_SIZE`, and `WHISPER_PRELOAD_ON_STARTUP`.
+- For CPU-first deployments, the recommended baseline is `WHISPER_MODEL_SIZE=tiny`, `WHISPER_DEVICE=cpu`, `WHISPER_COMPUTE_TYPE=int8`, `WHISPER_BEAM_SIZE=5`, and `WHISPER_PRELOAD_ON_STARTUP=true`.
+- Cold-start strategy matters: preload the Whisper model at service startup and keep the Hugging Face model cache warm or baked into the image so the first citizen request does not pay model download time.
 - The Express API (`apps/api`) uses **Zod** for request validation — always validate inputs before processing.
-- The FastAPI ML service (`apps/ml`) uses **Pydantic** models for request/response schemas.
+- The FastAPI ML service uses **FastAPI**, multipart uploads, and configurable Faster-Whisper settings for the ASR path.
 - Endpoints marked ⚠️ are designed/spec'd but not yet implemented. Do not call them in production until the linked issues are closed.
 - Rate limiting is applied on all routes. See `apps/api/src/middleware/rateLimit.ts` for configuration.
