@@ -20,14 +20,46 @@ from services.telemetry import (
 
 logger = logging.getLogger(__name__)
 telemetry_logger = get_telemetry_logger()
+DEFAULT_WHISPER_BEAM_SIZE = 5
 
 # Load model lazily on first request — prevents blocking startup of FastAPI microservice
 model = None
 WHISPER_MODEL_SIZE = os.getenv("WHISPER_MODEL_SIZE", "small")
 WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")
 WHISPER_COMPUTE_TYPE = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
-WHISPER_BEAM_SIZE = int(os.getenv("WHISPER_BEAM_SIZE", "5"))
 WHISPER_PRELOAD_ON_STARTUP = os.getenv("WHISPER_PRELOAD_ON_STARTUP", "").strip().lower()
+
+
+def parse_beam_size(
+    raw_value: str | None,
+    *,
+    default: int = DEFAULT_WHISPER_BEAM_SIZE,
+) -> int:
+    if raw_value is None:
+        return default
+
+    try:
+        parsed_value = int(raw_value)
+    except (TypeError, ValueError):
+        logger.warning(
+            "Invalid WHISPER_BEAM_SIZE=%r; falling back to %s",
+            raw_value,
+            default,
+        )
+        return default
+
+    if parsed_value < 1:
+        logger.warning(
+            "Invalid WHISPER_BEAM_SIZE=%r; falling back to %s",
+            raw_value,
+            default,
+        )
+        return default
+
+    return parsed_value
+
+
+WHISPER_BEAM_SIZE = parse_beam_size(os.getenv("WHISPER_BEAM_SIZE"))
 
 
 def should_preload_model_on_startup() -> bool:

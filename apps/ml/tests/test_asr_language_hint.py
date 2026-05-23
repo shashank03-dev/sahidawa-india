@@ -124,6 +124,14 @@ def test_normalize_content_type_strips_codec_parameters():
     assert asr.normalize_content_type(None) == ""
 
 
+def test_parse_beam_size_falls_back_when_env_value_is_invalid(caplog):
+    with caplog.at_level("WARNING"):
+        beam_size = asr.parse_beam_size("fast")
+
+    assert beam_size == 5
+    assert "WHISPER_BEAM_SIZE" in caplog.text
+
+
 def test_router_uses_lifespan_instead_of_legacy_startup_hooks():
     assert asr.router.on_startup == []
     assert not isinstance(asr.router.lifespan_context, _DefaultLifespan)
