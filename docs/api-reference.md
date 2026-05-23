@@ -2,8 +2,7 @@
 
 This document provides a comprehensive reference for the HTTP endpoints that power **SahiDawa**.
 
-<<<<<<< HEAD
-The platform runs three service surfaces:
+The platform runs three HTTP services during local development:
 
 | Service    | Technology                 | Port   | Base URL                |
 | ---------- | -------------------------- | ------ | ----------------------- |
@@ -11,38 +10,22 @@ The platform runs three service surfaces:
 | `apps/api` | Express (Node.js)          | `4000` | `http://localhost:4000` |
 | `apps/ml`  | FastAPI (Python)           | `8000` | `http://localhost:8000` |
 
-=======
-The platform runs three HTTP services during local development:
-
-| Service    | Technology         | Port   | Base URL                |
-| ---------- | ------------------ | ------ | ----------------------- |
-| `apps/web` | Next.js App Router | `3000` | `http://localhost:3000` |
-| `apps/api` | Express (Node.js)  | `4000` | `http://localhost:4000` |
-| `apps/ml`  | FastAPI (Python)   | `8000` | `http://localhost:8000` |
-
-> > > > > > > 35ad308 (feat(voice): make voice triage production-ready end-to-end)
-
 ---
 
 # Table of Contents
 
-<<<<<<< HEAD
-
 - [apps/web — Next.js Web App Routes](#appsweb--nextjs-web-app-routes-port-3000)
     - [POST /api/voice/transcribe](#post-apivoicetranscribe)
-
 - [apps/api — Express Service](#appsapi--express-service-port-4000)
     - [GET /](#get-)
     - [GET /health](#get-health)
     - [POST /api/verify](#post-apiverify)
     - [Recall Push Notifications](#recall-push-notifications)
-
 - [apps/ml — FastAPI ML Service](#appsml--fastapi-ml-service-port-8000)
     - [GET /](#get--1)
     - [GET /health](#get-health-1)
     - [POST /ocr/extract](#post-ocrextract)
     - [POST /asr/transcribe](#post-asrtranscribe)
-
 - [Error Codes Summary](#error-codes-summary)
 - [Notes for Contributors](#notes-for-contributors)
 
@@ -55,47 +38,6 @@ The platform runs three HTTP services during local development:
 Server-side proxy used by the Voice Triage page. The browser records audio,
 uploads it to this route, and the web app forwards the file to the ML service
 at `/asr/transcribe`.
-
-| Field         | Details                 |
-| ------------- | ----------------------- |
-| Method        | `POST`                  |
-| Path          | `/api/voice/transcribe` |
-| Auth Required | No                      |
-| Content-Type  | `multipart/form-data`   |
-
-### Request Body
-
-| Field      | Type     | Required | Description                                    |
-| ---------- | -------- | -------- | ---------------------------------------------- |
-| `file`     | `file`   | Yes      | Recorded audio clip to transcribe              |
-| `language` | `string` | No       | Selected browser speech locale such as `ta-IN` |
-
-=======
-
-- [apps/web — Next.js Route Handlers](#appsweb--nextjs-route-handlers-port-3000)
-    - [POST /api/voice/transcribe](#post-apivoicetranscribe)
-- [apps/api — Express Service](#appsapi--express-service-port-4000)
-    - [GET /](#get-)
-    - [GET /health](#get-health)
-    - [POST /api/verify](#post-apiverify)
-    - [Recall Push Notifications](#recall-push-notifications)
-- [apps/ml — FastAPI ML Service](#appsml--fastapi-ml-service-port-8000)
-    - [GET /](#get--1)
-    - [GET /health](#get-health-1)
-    - [POST /ocr/extract](#post-ocrextract)
-    - [POST /asr/transcribe](#post-asrtranscribe)
-- [Error Codes Summary](#error-codes-summary)
-- [Notes for Contributors](#notes-for-contributors)
-
----
-
-# apps/web — Next.js Route Handlers (Port 3000)
-
-## POST /api/voice/transcribe
-
-Proxy endpoint used by the Voice Triage page. It accepts recorded browser audio,
-forwards the multipart payload to the ML ASR service, and normalizes the result
-for the UI.
 
 | Field         | Details                         |
 | ------------- | ------------------------------- |
@@ -120,13 +62,10 @@ curl -X POST http://localhost:3000/api/voice/transcribe \
   -F "language=en-IN"
 ```
 
-> > > > > > > 35ad308 (feat(voice): make voice triage production-ready end-to-end)
-
 ### Example Response — `200 OK`
 
 ```json
 {
-<<<<<<< HEAD
     "transcript": "I have fever and cough",
     "language": "en",
     "languageConfidence": 0.84
@@ -154,10 +93,6 @@ curl -X POST http://localhost:3000/api/voice/transcribe \
 ```json
 {
     "error": "Could not reach the transcription service."
-=======
-    "transcript": "I have had fever and cough for two days",
-    "language": "en",
-    "languageConfidence": 0.98
 }
 ```
 
@@ -166,7 +101,6 @@ curl -X POST http://localhost:3000/api/voice/transcribe \
 ```json
 {
     "error": "Transcription service timed out."
->>>>>>> 35ad308 (feat(voice): make voice triage production-ready end-to-end)
 }
 ```
 
