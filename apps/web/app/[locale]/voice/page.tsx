@@ -14,6 +14,7 @@ import {
 } from "./lib/browser";
 import { getConfidenceMeta, type ConfidenceMeta } from "./lib/confidence";
 import { detectEmergencyKeywords } from "./lib/emergency";
+import { shouldAutoFocusVoicePanel } from "./lib/accessibility";
 import {
     DEFAULT_VOICE_LANGUAGE,
     getVoiceLanguageOption,
@@ -247,6 +248,10 @@ export default function VoiceTriagePage() {
 
         if (announcement) {
             setSrAnnouncement(announcement);
+        }
+
+        if (!shouldAutoFocusVoicePanel(step)) {
+            return;
         }
 
         const focusTimer = window.setTimeout(() => {
