@@ -76,6 +76,13 @@ ALLOWED_TYPES = {
 }
 
 
+def normalize_content_type(content_type: str | None) -> str:
+    if not content_type:
+        return ""
+
+    return content_type.split(";", 1)[0].strip().lower()
+
+
 def normalize_requested_language(language: str | None) -> str | None:
     if language is None:
         return None
@@ -105,7 +112,8 @@ async def transcribe_audio(file: UploadFile = File(...), language: str | None = 
     environments regardless of libsndfile codec availability.
     """
     # ── 1. Validate content type ──────────────────────────────────────────────
-    if file.content_type not in ALLOWED_TYPES:
+    normalized_content_type = normalize_content_type(file.content_type)
+    if normalized_content_type not in ALLOWED_TYPES:
         raise HTTPException(
             status_code=400,
             detail=f"Unsupported audio format '{file.content_type}'. "

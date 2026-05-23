@@ -118,6 +118,12 @@ def test_preload_model_if_configured_skips_when_disabled(monkeypatch):
     assert calls == []
 
 
+def test_normalize_content_type_strips_codec_parameters():
+    assert asr.normalize_content_type("audio/webm;codecs=opus") == "audio/webm"
+    assert asr.normalize_content_type("audio/mp4; codecs=mp4a.40.2") == "audio/mp4"
+    assert asr.normalize_content_type(None) == ""
+
+
 def test_router_uses_lifespan_instead_of_legacy_startup_hooks():
     assert asr.router.on_startup == []
     assert not isinstance(asr.router.lifespan_context, _DefaultLifespan)
