@@ -69,9 +69,14 @@ describe("Voice Triage accessibility semantics", () => {
             />
         );
 
+        const describedByMatch = markup.match(/aria-describedby="([^"]+)"/);
+        const messageIdMatch = markup.match(
+            /<p id="([^"]+)" class="mt-2 text-sm leading-relaxed text-slate-600">/
+        );
+
         expect(markup).toContain("motion-reduce:animate-none");
-        expect(markup).toContain('aria-describedby="voice-error-message"');
-        expect(markup).toContain('id="voice-error-message"');
+        expect(describedByMatch?.[1]).toBeTruthy();
+        expect(messageIdMatch?.[1]).toBe(describedByMatch?.[1]);
         expect(markup).toContain("focus-visible:outline-[3px]");
         expect(markup).toContain("focus-visible:outline-emerald-600");
         expect(markup).toContain("focus-visible:ring-[3px]");
